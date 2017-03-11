@@ -29,6 +29,7 @@ void level_map::generate_classic()
     coords c(GRID_W,GRID_H);
     c.setrand();
     const int starting_room = c.lin();
+    int exit_room;
     // build initial chain of connected rooms
     while (1) {
         bool up = (!c.top_edge()) && (!rooms[c.up().lin()].connected());
@@ -36,6 +37,7 @@ void level_map::generate_classic()
         bool left = (!c.left_edge()) && (!rooms[c.left().lin()].connected());
         bool right = (!c.right_edge()) && (!rooms[c.right().lin()].connected());
         if (!(up || down || left || right)) {
+            exit_room = c.lin();
             break;
         }
         coords next = c;
@@ -232,6 +234,21 @@ void level_map::generate_classic()
             }
         }
     }
+
+    // add the stairs, preferably not adjacent to a door
+    coords exit(level_w,level_h);
+    int exit_rounds = 0;
+    while (exit_rounds++ < 10) { // possible to have a tiny central room with adjacent doors to all cells
+        exit = room_random(rooms[exit_room]);
+        if (!exit.top_edge() && cells[exit.up().lin()].is_door()) continue;
+        if (!exit.bottom_edge() && cells[exit.down().lin()].is_door()) continue;
+        if (!exit.left_edge() && cells[exit.left().lin()].is_door()) continue;
+        if (!exit.right_edge() && cells[exit.right().lin()].is_door()) continue;
+        break;
+    };
+    cells[exit.lin()].ch = '>';
+    cells[exit.lin()].col = TCODColor::white;
+    cells[exit.lin()].set_exit();
 
     entry = room_random(rooms[starting_room]);
 }

@@ -6,6 +6,7 @@
 #include "common.h"
 #include "notes.h"
 
+level_map *current_level = nullptr;
 TCODConsole *io;
 int turn;
 int dlev;
@@ -139,8 +140,8 @@ void render_map()
         coords p(MAP_W, MAP_H);
         for (p.y=0; p.y < p.h; p.y++) {
             for (p.x=0; p.x < p.w; p.x++) {
-                io->setCharForeground(p.x,p.y+1,level.cell(p).col);
-                io->setChar(p.x,p.y+1,level.cell(p).ch);
+                io->setCharForeground(p.x,p.y+1,current_level->cell(p).col);
+                io->setChar(p.x,p.y+1,current_level->cell(p).ch);
             }
         }
         io->setCharForeground(player.pos.x,player.pos.y+1,TCODColor::yellow);
@@ -219,10 +220,29 @@ void try_attack(creature *c)
     turn++;
 }
 
+void new_level(const int level_num)
+{
+    delete current_level;
+    for (auto i = creatures.begin(); i != creatures.end(); ++i) {
+        delete *i;
+    }
+    creatures.clear();
+    dlev = level_num;
+    current_level = new level_map(MAP_W,MAP_H);
+    current_level->generate_classic();
+    player.pos = current_level->get_entry_point();
+    populate_level(current_level);
+}
+
 void try_move(const coords& target)
 {
     if (player.pos == target) return; // moving off edge of map
-    if (!level.cell(target).is_walkable()) return;
+    if (!current_level->cell(target).is_walkable()) return;
+    if (current_level->cell(target).is_exit()) {
+        new_level(dlev+1);
+        notes::add("you descend to level " + int_to_str(dlev));
+        return;
+    }
     for (auto i = creatures.begin(); i != creatures.end(); ++i) {
         creature *c = *i;
         if (c->pos == target) {
@@ -252,10 +272,7 @@ int main(int argc, char *argv[])
 
     show_title();
     player_setup();
-    dlev = 1;
-    level.generate_classic();
-    player.pos = level.get_entry_point();
-    populate_level(&level);
+    new_level(1);
     turn = 0;
     bool exit_game = false;
 
@@ -271,10 +288,14 @@ int main(int argc, char *argv[])
             case TCODK_DOWN : try_move(player.pos.down()); break;
             case TCODK_LEFT : try_move(player.pos.left()); break;
             case TCODK_RIGHT : try_move(player.pos.right()); break;
-            case TCODK_CHAR : if (key.c == '.') {
-                turn++;
+            case TCODK_CHAR : {
+                switch(key.c) {
+                    case '.': turn++; break;
+                    case 'h': if (key.lctrl) { player.hp = player.max_hp; } break;  // CHEAT
+                    case 'n': if (key.lctrl) { new_level(++dlev); } break;  // CHEAT
+                }
+                break;
             }
-            break;
             case TCODK_ESCAPE : exit_game = true; break;
             case TCODK_ENTER : if (key.lalt || key.ralt) { io->setFullscreen(!io->isFullscreen()); } break;
             default:break;

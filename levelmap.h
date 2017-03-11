@@ -9,6 +9,7 @@ using namespace std;
 #define MAP_WALKABLE 0x01
 #define MAP_WALL 0x02
 #define MAP_COORIDOR 0x04
+#define MAP_EXIT 0x08
 
 class map_cell {
 public:
@@ -23,6 +24,9 @@ public:
     void set_wall() { flags = flags | MAP_WALL; }
     bool is_cooridor() const { return (flags & MAP_COORIDOR) != 0; }
     void set_cooridor() { flags = flags | MAP_COORIDOR; }
+    bool is_door() const { return is_wall() && is_walkable(); }
+    bool is_exit() const { return (flags & MAP_EXIT) != 0; }
+    void set_exit() { flags = flags | MAP_EXIT; }
 };
 
 class map_room {
