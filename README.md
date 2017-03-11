@@ -1,4 +1,5 @@
-# dod
-Return to the Dungeons of Doom - 7drl 2017
+# Return to the Dungeons of Doom
 
-7drl.org
+Mad Sorcerer's 2017 entry to the seven-day rogue-like competition.
+
+http://7drl.org
