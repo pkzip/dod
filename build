@@ -1,0 +1,1 @@
+g++ -std=c++11 -ltcod -ltcodxx -L. -I../libtcod/include -lncurses common.cpp main.cpp levelmap.cpp util.cpp creature.cpp notes.cpp player_character.cpp -o rogue
