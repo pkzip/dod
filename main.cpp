@@ -228,7 +228,7 @@ void new_level(const int level_num)
     }
     creatures.clear();
     dlev = level_num;
-    current_level = new level_map(MAP_W,MAP_H);
+    current_level = new level_map(MAP_W,MAP_H,level_num);
     current_level->generate_classic();
     player.pos = current_level->get_entry_point();
     populate_level(current_level);

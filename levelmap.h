@@ -40,7 +40,7 @@ public:
 
 class level_map : public ITCODPathCallback {
 public:
-    level_map(const int w, const int h);
+    level_map(const int w, const int h, const int dungeon_level);
     level_map(const level_map&) = delete;
     level_map& operator = (level_map&) = delete;
     const map_cell& cell(const int x, const int y) const;
@@ -53,10 +53,12 @@ public:
     virtual float getWalkCost(int x1, int y1, int x2, int y2, void *userdata) const;
     coords room_center(const map_room& r) const;
     coords room_random(const map_room& r) const;
+    int get_dungeon_level() const { return dungeon_level; }
 private:
     vector<map_cell> cells;
     vector<map_room> rooms;
     int level_w;
     int level_h;
+    int dungeon_level;
     coords entry;
 };

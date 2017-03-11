@@ -5,12 +5,13 @@
 const int GRID_W = 3;
 const int GRID_H = 3;
 
-level_map::level_map(const int w, const int h) :
+level_map::level_map(const int w, const int h, const int dungeon_level) :
     cells(w*h),
     rooms(GRID_W*GRID_H),
     level_w(w),
     level_h(h),
-    entry(w,h)
+    entry(w,h),
+    dungeon_level(dungeon_level)
 {
 }
 

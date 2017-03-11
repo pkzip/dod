@@ -8,6 +8,8 @@
 
 typedef struct
 {
+    int first_level;
+    int last_level;
     int ch;
     TCODColor col;
     std::string name;

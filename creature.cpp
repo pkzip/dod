@@ -96,17 +96,38 @@ bool creature::valid_move(const coords& c) const
     return true;
 }
 
+int creature_for_level(const int lev)
+{
+    vector<int> candidates;
+    for (int i=0; i < creature_defs.size(); i++) {
+        if (lev >= creature_defs[i].first_level && lev <= creature_defs[i].last_level) {
+            candidates.push_back(i);
+        }
+    }
+    if (candidates.empty()) {
+        printf("no creatures defined for level %d\n", lev);
+        return 0;
+    }
+    return candidates[randint(0,candidates.size()-1)];
+}
+
 void populate_level(level_map *level)
 {
     for (int i=0; i < level->num_rooms(); i++) {
         const map_room& r = level->room(i);
-        creature *c = new creature(level, 0);
+        creature *c = new creature(level, creature_for_level(level->get_dungeon_level()));
         c->pos = level->room_random(r);
         creatures.push_back(c);
     }
 }
 
 vector<creature_def> creature_defs = {
-    {'b', TCODColor::green, "bat", 4, "1d4"}
+    {1,3,'b', TCODColor::grey, "bat", 3, "1d3"},
+    {1,3,'s', TCODColor::green, "snake", 3, "1d3"},
+    {1,4,'k', TCODColor::cyan, "kobold", 6, "1d4"},
+    {2,4,'g', TCODColor::grey, "goblin", 6, "1d4+1"},
+    {2,5,'h', TCODColor::blue, "hobgoblin", 8, "1d6"},
+    {3,6,'o', TCODColor::yellow, "ogre", 10, "1d6+2"},
+    {4,8,'t', TCODColor::red, "troll", 16, "2d4"}
 };
 
