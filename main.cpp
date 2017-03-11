@@ -140,8 +140,11 @@ void render_map()
         coords p(MAP_W, MAP_H);
         for (p.y=0; p.y < p.h; p.y++) {
             for (p.x=0; p.x < p.w; p.x++) {
-                io->setCharForeground(p.x,p.y+1,current_level->cell(p).col);
-                io->setChar(p.x,p.y+1,current_level->cell(p).ch);
+                const map_cell& cell = current_level->cell(p);
+                if (cell.have_seen()) {
+                    io->setCharForeground(p.x,p.y+1,cell.col);
+                    io->setChar(p.x,p.y+1,cell.ch);
+                }
             }
         }
         io->setCharForeground(player.pos.x,player.pos.y+1,TCODColor::yellow);
@@ -220,6 +223,29 @@ void try_attack(creature *c)
     turn++;
 }
 
+void update_visibility()
+{
+    // handle lantern view
+    for (int x=player.pos.x-1; x <= player.pos.x+1; x++) {
+        for (int y=player.pos.y-1; y <= player.pos.y+1; y++) {
+            map_cell& cell = current_level->cell_ref(x,y);
+            cell.set_seen();
+        }
+    }
+    // handle lit room
+    const int room_num = current_level->cell(player.pos).room;
+    if (room_num >= 0 && current_level->room(room_num).lit) {
+        for (int x=0; x < MAP_W; x++) {
+            for (int y=0; y < MAP_H; y++) {
+                map_cell& cell = current_level->cell_ref(x,y);
+                if (cell.room == room_num) {
+                    cell.set_seen();
+                }
+            }
+        }
+    }
+}
+
 void new_level(const int level_num)
 {
     delete current_level;
@@ -231,6 +257,7 @@ void new_level(const int level_num)
     current_level = new level_map(MAP_W,MAP_H,level_num);
     current_level->generate_classic();
     player.pos = current_level->get_entry_point();
+    update_visibility();
     populate_level(current_level);
 }
 
@@ -251,6 +278,7 @@ void try_move(const coords& target)
         }
     }
     player.pos = target;
+    update_visibility();
     turn++;
 }
 

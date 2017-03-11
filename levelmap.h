@@ -10,14 +10,15 @@ using namespace std;
 #define MAP_WALL 0x02
 #define MAP_COORIDOR 0x04
 #define MAP_EXIT 0x08
+#define MAP_SEEN 0x10
 
 class map_cell {
 public:
-    map_cell() : ch(' '), col(TCODColor::white), flags(0), item(-1) {}
+    map_cell() : ch(' '), col(TCODColor::white), flags(0), room(-1) {}
     int ch;
     TCODColor col;
     int flags;
-    int item;
+    int room;
     bool is_walkable() const { return (flags & MAP_WALKABLE) != 0; }
     void set_walkable() { flags = flags | MAP_WALKABLE; }
     bool is_wall() const { return (flags & MAP_WALL) != 0; }
@@ -27,6 +28,8 @@ public:
     bool is_door() const { return is_wall() && is_walkable(); }
     bool is_exit() const { return (flags & MAP_EXIT) != 0; }
     void set_exit() { flags = flags | MAP_EXIT; }
+    bool have_seen() const { return (flags & MAP_SEEN) != 0; }
+    void set_seen() { flags = flags | MAP_SEEN; }
 };
 
 class map_room {
@@ -35,6 +38,7 @@ public:
     map_room(int x1, int y1, int x2, int y2) : x1(x1), y1(y1), x2(x2), y2(y2) {}
     vector<int> connections;
     int x1,y1,x2,y2;
+    bool lit;
     bool connected() const { return !connections.empty(); }
 };
 
@@ -44,6 +48,7 @@ public:
     level_map(const level_map&) = delete;
     level_map& operator = (level_map&) = delete;
     const map_cell& cell(const int x, const int y) const;
+    map_cell& cell_ref(const int x, const int y);
     const map_cell& cell(const coords& c) const;
     const int num_rooms() const { return rooms.size(); }
     const map_room& room(const int idx) const { return rooms[idx]; }
@@ -55,6 +60,7 @@ public:
     coords room_random(const map_room& r) const;
     int get_dungeon_level() const { return dungeon_level; }
 private:
+    bool is_room_lit(const bool main_route) const;
     vector<map_cell> cells;
     vector<map_room> rooms;
     int level_w;

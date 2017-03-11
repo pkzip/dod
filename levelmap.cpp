@@ -20,6 +20,11 @@ const map_cell& level_map::cell(const int x, const int y) const
     return cells[y*level_w+x];
 }
 
+map_cell& level_map::cell_ref(const int x, const int y)
+{
+    return cells[y*level_w+x];
+}
+
 const map_cell& level_map::cell(const coords& c) const
 {
     return cells[c.lin()];
@@ -65,6 +70,7 @@ void level_map::generate_classic()
         }
         rooms[c.lin()].connections.push_back(next.lin());
         rooms[next.lin()].connections.push_back(c.lin());
+        rooms[c.lin()].lit = is_room_lit(true);
         c = next;
     }
 
@@ -108,6 +114,7 @@ void level_map::generate_classic()
                 } else {
                     rooms[i].connections.push_back(next.lin());
                     rooms[next.lin()].connections.push_back(i);
+                    rooms[i].lit = is_room_lit(false);
                     last = next;
                 }
             }
@@ -204,6 +211,7 @@ void level_map::generate_classic()
                     }
                     cells[p.lin()].ch = ch;
                     cells[p.lin()].col = col;
+                    cells[p.lin()].room = c.lin();
                 }
             }
         }
@@ -285,4 +293,11 @@ coords level_map::room_random(const map_room& r) const
     c.x = randint(r.x1+1,r.x2-1);
     c.y = randint(r.y1+1,r.y2-1);
     return c;
+}
+
+bool level_map::is_room_lit(const bool main_route) const
+{
+    int chance = 100-(20*(dungeon_level-1));
+    if (!main_route) chance -= 20;
+    return (randint(1,100) <= chance);
 }
