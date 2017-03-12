@@ -1,9 +1,15 @@
 #include <assert.h>
 #include "levelmap.h"
+#include "item_base.h"
 #include "util.h"
 
 const int GRID_W = 3;
 const int GRID_H = 3;
+
+map_cell::~map_cell()
+{
+    delete item;
+}
 
 level_map::level_map(const int w, const int h, const int dungeon_level) :
     cells(w*h),

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <libtcod.hpp>
 #include "common.h"
+#include "item_base.h"
 #include "notes.h"
 
 level_map *current_level = nullptr;
@@ -153,12 +154,17 @@ void render_map()
             for (p.x=0; p.x < p.w; p.x++) {
                 const map_cell& cell = current_level->cell(p);
                 if (cell.have_seen()) {
+                    int ch = cell.ch;
                     TCODColor col = cell.col;
+                    if (cell.item != nullptr) {
+                        ch = cell.item->map_char();
+                        col = cell.item->map_col();
+                    }
                     if (!cell.is_visible()) {
                         col = col * 0.5;
                     }
                     io->setCharForeground(p.x,p.y+1,col);
-                    io->setChar(p.x,p.y+1,cell.ch);
+                    io->setChar(p.x,p.y+1,ch);
                 }
             }
         }
@@ -272,6 +278,22 @@ void update_visibility()
 
 }
 
+void add_treasure()
+{
+    for (int i=0; i < current_level->num_rooms(); i++) {
+        const map_room& r = current_level->room(i);
+        if (randint(0,1) == 0) {
+            item_base *item = new gold_coins(randint(1,dlev*5));
+            coords c = current_level->make_coords();
+            do {
+                c = current_level->room_random(r);
+            } while (current_level->cell(c).is_exit() ||
+                     current_level->cell(c).item != nullptr);
+            current_level->cell_ref(c).item = item;
+        }
+    }
+}
+
 void new_level(const int level_num)
 {
     delete current_level;
@@ -283,8 +305,22 @@ void new_level(const int level_num)
     current_level = new level_map(MAP_W,MAP_H,level_num);
     current_level->generate_classic();
     player.pos = current_level->get_entry_point();
+    add_treasure();
     populate_level(current_level);
     update_visibility();
+}
+
+void pickup_item()
+{
+    item_base *item = current_level->cell(player.pos).item;
+    if (item == nullptr) return;
+    current_level->cell_ref(player.pos).item = nullptr;
+    if (item->category() == GOLD) {
+        gold_coins *coins = static_cast<gold_coins*>(item);
+        notes::add("you find " + int_to_str(coins->count()) + " gold coins");
+        player.gold += coins->count();
+        delete coins;
+    }
 }
 
 void try_move(const coords& target)
@@ -304,6 +340,7 @@ void try_move(const coords& target)
         }
     }
     player.pos = target;
+    pickup_item();
     update_visibility();  // needed for monster AI
     turn++;
 }

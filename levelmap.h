@@ -13,13 +13,17 @@ using namespace std;
 #define MAP_SEEN 0x10
 #define MAP_VISIBLE 0x20
 
+class item_base;
+
 class map_cell {
 public:
-    map_cell() : ch(' '), col(TCODColor::white), flags(0), room(-1) {}
+    map_cell() : ch(' '), col(TCODColor::white), flags(0), room(-1), item(nullptr) {}
+    ~map_cell();
     int ch;
     TCODColor col;
     int flags;
     int room;
+    item_base *item;
     bool is_walkable() const { return (flags & MAP_WALKABLE) != 0; }
     void set_walkable() { flags = flags | MAP_WALKABLE; }
     bool is_wall() const { return (flags & MAP_WALL) != 0; }
