@@ -15,6 +15,7 @@ typedef struct
     std::string name;
     int base_hp;
     dice damage;
+    int aggressiveness;
 } creature_def;
 
 extern std::vector<creature_def> creature_defs;

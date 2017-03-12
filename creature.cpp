@@ -22,15 +22,21 @@ bool creature::move()
         break;
 
     case WANDERING:
-        if (randint(1,10) == 1) {
+        if (!in_view && randint(1,10) == 1) {
             state = ASLEEP;
         } else {
-            const int r = randint(0,3);
-            switch(r) {
-                case 0: if (valid_move(pos.up())) pos = pos.up(); break;
-                case 1: if (valid_move(pos.down())) pos = pos.down(); break;
-                case 2: if (valid_move(pos.left())) pos = pos.left(); break;
-                case 3: if (valid_move(pos.right())) pos = pos.right(); break;
+            if (in_view) {
+                if (randint(1,100) <= def->aggressiveness) {
+                    state = CHASING;
+                }
+            } else {
+                const int r = randint(0,3);
+                switch(r) {
+                    case 0: if (valid_move(pos.up())) pos = pos.up(); break;
+                    case 1: if (valid_move(pos.down())) pos = pos.down(); break;
+                    case 2: if (valid_move(pos.left())) pos = pos.left(); break;
+                    case 3: if (valid_move(pos.right())) pos = pos.right(); break;
+                }
             }
         }
         break;
@@ -42,11 +48,18 @@ bool creature::move()
             coords c = level->make_coords();
             TCODPath pathfinder(c.w,c.h,this,NULL,0.0f);
             pathfinder.compute(pos.x,pos.y,player.pos.x,player.pos.y);
-            if (pathfinder.size() > 0) {
-                pathfinder.get(0,&c.x,&c.y);
-                pos = c;
-            } else {
+            int break_off = 0;
+            if (!in_view) break_off += 40;
+            if (pathfinder.size() == 0) break_off += 20;
+            break_off += pathfinder.size() * 5;
+            break_off -= def->aggressiveness;
+            if (randint(1,100) <= break_off) {
                 state = WANDERING;
+            } else {
+                if (pathfinder.size() > 0) {
+                    pathfinder.get(0,&c.x,&c.y);
+                    pos = c;
+                }
             }
         }
         break;
@@ -79,10 +92,10 @@ float creature::getWalkCost(int x1, int y1, int x2, int y2, void *userdata) cons
     coords c = level->make_coords();
     c.x = x2;
     c.y = y2;
-    if (!level->cell(c).is_walkable() || level->cell(c).is_exit()) {
-        return 0.0f;
+    if (player.pos == c) {
+        return 1.0f;  // valid_move will not go on top of player, but need this to complete path
     }
-    return 1.0f;
+    if (valid_move(c)) { return 1.0f; } else { return 0.0f; }
 }
 
 bool creature::valid_move(const coords& c) const
@@ -125,12 +138,13 @@ void populate_level(level_map *level)
 }
 
 vector<creature_def> creature_defs = {
-    {1,3,'b', TCODColor::grey, "bat", 3, "1d3"},
-    {1,3,'s', TCODColor::green, "snake", 3, "1d3"},
-    {1,4,'k', TCODColor::cyan, "kobold", 6, "1d4"},
-    {2,4,'g', TCODColor::grey, "goblin", 6, "1d4+1"},
-    {2,5,'h', TCODColor::blue, "hobgoblin", 8, "1d6"},
-    {3,6,'o', TCODColor::yellow, "ogre", 10, "1d6+2"},
-    {4,8,'t', TCODColor::red, "troll", 16, "2d4"}
+//   lev ch   col                name        hp damage   agg
+    {1,3,'b', TCODColor::grey,   "bat",       3, "1d3",    5},
+    {1,3,'s', TCODColor::green,  "snake",     3, "1d3",   10},
+    {1,4,'k', TCODColor::cyan,   "kobold",    6, "1d4",   50},
+    {2,4,'g', TCODColor::grey,   "goblin",    6, "1d4+1", 80},
+    {2,5,'h', TCODColor::blue,   "hobgoblin", 8, "1d6",   85},
+    {3,6,'o', TCODColor::yellow, "ogre",     10, "1d6+2", 90},
+    {4,8,'t', TCODColor::red,    "troll",    16, "2d4",   99}
 };
 
