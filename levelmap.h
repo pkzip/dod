@@ -50,6 +50,7 @@ public:
     const map_cell& cell(const int x, const int y) const;
     map_cell& cell_ref(const int x, const int y);
     const map_cell& cell(const coords& c) const;
+    map_cell& cell_ref(const coords& c);
     const int num_rooms() const { return rooms.size(); }
     const map_room& room(const int idx) const { return rooms[idx]; }
     void generate_classic();

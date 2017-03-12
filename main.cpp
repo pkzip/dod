@@ -151,8 +151,10 @@ void render_map()
         io->setChar(player.pos.x,player.pos.y+1,1);
         for (auto i = creatures.begin(); i != creatures.end(); ++i) {
             creature *c = *i;
-            io->setCharForeground(c->pos.x,c->pos.y+1,c->def->col);
-            io->setChar(c->pos.x,c->pos.y+1,c->def->ch);
+            if (c->visible()) {
+                io->setCharForeground(c->pos.x,c->pos.y+1,c->def->col);
+                io->setChar(c->pos.x,c->pos.y+1,c->def->ch);
+            }
         }
         io->setDefaultForeground(TCODColor::yellow);
         io->print(0,SCREEN_H-1,string("Level:" + int_to_str(dlev)).c_str());
@@ -225,11 +227,22 @@ void try_attack(creature *c)
 
 void update_visibility()
 {
+    // clear all creature visibility
+    for (auto i = creatures.begin(); i != creatures.end(); i++) {
+        creature *c = *i;
+        c->in_view = false;
+    }
     // handle lantern view
     for (int x=player.pos.x-1; x <= player.pos.x+1; x++) {
         for (int y=player.pos.y-1; y <= player.pos.y+1; y++) {
-            map_cell& cell = current_level->cell_ref(x,y);
-            cell.set_seen();
+            const coords p(MAP_W,MAP_H,x,y);
+            current_level->cell_ref(p).set_seen();
+            for (auto i = creatures.begin(); i != creatures.end(); i++) {
+                creature *c = *i;
+                if (c->pos == p) {
+                    c->in_view = true;
+                }
+            }
         }
     }
     // handle lit room
@@ -237,9 +250,16 @@ void update_visibility()
     if (room_num >= 0 && current_level->room(room_num).lit) {
         for (int x=0; x < MAP_W; x++) {
             for (int y=0; y < MAP_H; y++) {
-                map_cell& cell = current_level->cell_ref(x,y);
+                const coords p(MAP_W,MAP_H,x,y);
+                map_cell& cell = current_level->cell_ref(p);
                 if (cell.room == room_num) {
                     cell.set_seen();
+                    for (auto i = creatures.begin(); i != creatures.end(); i++) {
+                        creature *c = *i;
+                        if (c->pos == p) {
+                            c->in_view = true;
+                        }
+                    }
                 }
             }
         }
@@ -257,8 +277,8 @@ void new_level(const int level_num)
     current_level = new level_map(MAP_W,MAP_H,level_num);
     current_level->generate_classic();
     player.pos = current_level->get_entry_point();
-    update_visibility();
     populate_level(current_level);
+    update_visibility();
 }
 
 void try_move(const coords& target)

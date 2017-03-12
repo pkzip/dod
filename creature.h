@@ -35,12 +35,14 @@ public:
     void take_damage(const int damage);
     bool is_dead() const { return hp <= 0; }
     int xp_value() const;
+    bool visible() const { return in_view; }
     virtual float getWalkCost(int x1, int y1, int x2, int y2, void *userdata) const;
     creature_def *def;
     level_map *level;
     coords pos;
     creature_state state;
     int hp;
+    bool in_view;
 private:
     bool valid_move(const coords& c) const;
 };

@@ -30,6 +30,11 @@ const map_cell& level_map::cell(const coords& c) const
     return cells[c.lin()];
 }
 
+map_cell& level_map::cell_ref(const coords& c)
+{
+    return cells[c.lin()];
+}
+
 void level_map::generate_classic()
 {
     coords c(GRID_W,GRID_H);
