@@ -142,7 +142,11 @@ void render_map()
             for (p.x=0; p.x < p.w; p.x++) {
                 const map_cell& cell = current_level->cell(p);
                 if (cell.have_seen()) {
-                    io->setCharForeground(p.x,p.y+1,cell.col);
+                    TCODColor col = cell.col;
+                    if (!cell.is_visible()) {
+                        col = col * 0.5;
+                    }
+                    io->setCharForeground(p.x,p.y+1,col);
                     io->setChar(p.x,p.y+1,cell.ch);
                 }
             }
@@ -207,7 +211,7 @@ void try_attack(creature *c)
         const int d = compute_damage("1d4",0);
         c->take_damage(d);
         if (c->is_dead()) {
-            notes::add("you hit and kill the " + c->def->name);
+            notes::add("you defeat the " + c->def->name);
             player.grant_xp(c->xp_value());
             for (auto i = creatures.begin(); i != creatures.end(); ++i) {
                 if (*i == c) {
@@ -227,43 +231,34 @@ void try_attack(creature *c)
 
 void update_visibility()
 {
-    // clear all creature visibility
-    for (auto i = creatures.begin(); i != creatures.end(); i++) {
-        creature *c = *i;
-        c->in_view = false;
+    // clear visibility flags across map and handle lit room
+    const int room_num = current_level->cell(player.pos).room;
+    for (int x=0; x < MAP_W; x++) {
+        for (int y=0; y < MAP_H; y++) {
+            const coords p(MAP_W,MAP_H,x,y);
+            map_cell& cell = current_level->cell_ref(p);
+            cell.clear_visible();
+            if (room_num >= 0 && current_level->room(room_num).lit && cell.room == room_num) {
+                cell.set_seen();
+                cell.set_visible();
+            }
+        }
     }
     // handle lantern view
     for (int x=player.pos.x-1; x <= player.pos.x+1; x++) {
         for (int y=player.pos.y-1; y <= player.pos.y+1; y++) {
             const coords p(MAP_W,MAP_H,x,y);
-            current_level->cell_ref(p).set_seen();
-            for (auto i = creatures.begin(); i != creatures.end(); i++) {
-                creature *c = *i;
-                if (c->pos == p) {
-                    c->in_view = true;
-                }
-            }
+            map_cell& cell = current_level->cell_ref(p);
+            cell.set_seen();
+            cell.set_visible();
         }
     }
-    // handle lit room
-    const int room_num = current_level->cell(player.pos).room;
-    if (room_num >= 0 && current_level->room(room_num).lit) {
-        for (int x=0; x < MAP_W; x++) {
-            for (int y=0; y < MAP_H; y++) {
-                const coords p(MAP_W,MAP_H,x,y);
-                map_cell& cell = current_level->cell_ref(p);
-                if (cell.room == room_num) {
-                    cell.set_seen();
-                    for (auto i = creatures.begin(); i != creatures.end(); i++) {
-                        creature *c = *i;
-                        if (c->pos == p) {
-                            c->in_view = true;
-                        }
-                    }
-                }
-            }
-        }
+    // update creature visibility based on map visibility
+    for (auto i = creatures.begin(); i != creatures.end(); i++) {
+        creature *c = *i;
+        c->in_view = current_level->cell(c->pos).is_visible();
     }
+
 }
 
 void new_level(const int level_num)
@@ -298,7 +293,7 @@ void try_move(const coords& target)
         }
     }
     player.pos = target;
-    update_visibility();
+    update_visibility();  // needed for monster AI
     turn++;
 }
 
@@ -326,6 +321,7 @@ int main(int argc, char *argv[])
 
     while (!io->isWindowClosed() && !exit_game && player.hp > 0) {
         io->clear();
+        update_visibility();
         render_map();
         io->flush();
         TCOD_key_t key;

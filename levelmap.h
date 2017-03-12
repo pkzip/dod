@@ -11,6 +11,7 @@ using namespace std;
 #define MAP_COORIDOR 0x04
 #define MAP_EXIT 0x08
 #define MAP_SEEN 0x10
+#define MAP_VISIBLE 0x20
 
 class map_cell {
 public:
@@ -30,6 +31,9 @@ public:
     void set_exit() { flags = flags | MAP_EXIT; }
     bool have_seen() const { return (flags & MAP_SEEN) != 0; }
     void set_seen() { flags = flags | MAP_SEEN; }
+    bool is_visible() const { return (flags & MAP_VISIBLE) != 0; }
+    void set_visible() { flags = flags | MAP_VISIBLE; }
+    void clear_visible() { flags = flags & (~MAP_VISIBLE); }
 };
 
 class map_room {

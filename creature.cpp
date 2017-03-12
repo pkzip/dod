@@ -79,7 +79,7 @@ float creature::getWalkCost(int x1, int y1, int x2, int y2, void *userdata) cons
     coords c = level->make_coords();
     c.x = x2;
     c.y = y2;
-    if (!level->cell(c).is_walkable()) {
+    if (!level->cell(c).is_walkable() || level->cell(c).is_exit()) {
         return 0.0f;
     }
     return 1.0f;
@@ -88,6 +88,7 @@ float creature::getWalkCost(int x1, int y1, int x2, int y2, void *userdata) cons
 bool creature::valid_move(const coords& c) const
 {
     if (!level->cell(c).is_walkable()) return false;
+    if (level->cell(c).is_exit()) return false;
     if (player.pos == c) return false;
     for (auto i = creatures.begin(); i != creatures.end(); ++i) {
         creature *cr = *i;
@@ -116,7 +117,9 @@ void populate_level(level_map *level)
     for (int i=0; i < level->num_rooms(); i++) {
         const map_room& r = level->room(i);
         creature *c = new creature(level, creature_for_level(level->get_dungeon_level()));
-        c->pos = level->room_random(r);
+        do {
+            c->pos = level->room_random(r);
+        } while (c->pos == player.pos);
         creatures.push_back(c);
     }
 }
