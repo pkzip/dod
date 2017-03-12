@@ -133,6 +133,17 @@ void game_over()
     wait_continue();
 }
 
+bool confirm_quit()
+{
+    io->setDefaultForeground(TCODColor::white);
+    io->setAlignment(TCOD_LEFT);
+    io->print(0,0,"quit game - are you sure (y/N)?");
+    io->flush();
+    TCOD_key_t key;
+    TCODSystem::waitForEvent(TCOD_EVENT_KEY_PRESS,&key,NULL,true);
+    return (key.vk == TCODK_CHAR && key.c == 'y');
+}
+
 void render_map()
 {
     do {
@@ -340,7 +351,7 @@ int main(int argc, char *argv[])
                 }
                 break;
             }
-            case TCODK_ESCAPE : exit_game = true; break;
+            case TCODK_ESCAPE : if (confirm_quit()) { exit_game = true; } break;
             case TCODK_ENTER : if (key.lalt || key.ralt) { io->setFullscreen(!io->isFullscreen()); } break;
             default:break;
         }
