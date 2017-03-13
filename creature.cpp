@@ -143,11 +143,13 @@ void populate_level(level_map *level)
 vector<creature_def> creature_defs = {
 //   lev ch   col                name        hp damage   agg
     {1,3,'b', TCODColor::grey,   "bat",       3, "1d3",    5},
-    {1,3,'s', TCODColor::green,  "snake",     3, "1d3",   10},
-    {1,4,'k', TCODColor::cyan,   "kobold",    5, "1d4",   50},
+    {1,2,'s', TCODColor::green,  "snake",     3, "1d3",   10},
+    {2,4,'k', TCODColor::cyan,   "kobold",    5, "1d4",   50},
     {2,4,'g', TCODColor::grey,   "goblin",    6, "1d4+1", 80},
+    {3,5,'s', TCODColor::grey,   "skeleton",  7, "1d6",   80},
     {3,5,'h', TCODColor::blue,   "hobgoblin", 8, "1d6",   85},
     {4,6,'o', TCODColor::yellow, "ogre",     10, "1d6+2", 90},
-    {5,8,'t', TCODColor::red,    "troll",    16, "2d4",   99}
+    {5,8,'t', TCODColor::red,    "troll",    16, "2d4",   99},
+    {6,9,'z', TCODColor::green,  "zombie",   24, "2d6",   90}
 };
 

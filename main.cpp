@@ -317,7 +317,7 @@ void update_visibility()
 
 }
 
-void place_item(item_base *item, const map_room& r)
+bool place_item(item_base *item, const map_room& r)
 {
     coords c = current_level->make_coords();
     int tries = 0;
@@ -325,16 +325,25 @@ void place_item(item_base *item, const map_room& r)
         c = current_level->room_random(r);
         if (tries++ > 10) {  // failed to place
             delete item;
-            return;
+            return false;
         }
     } while (current_level->cell(c).is_exit() ||
              current_level->get_entry_point() == c ||
              current_level->cell(c).item != nullptr);
     current_level->cell_ref(c).item = item;
+    return true;
 }
 
 void add_treasure()
 {
+    if (dlev == AMULET_LEVEL) {
+        bool placed = false;
+        while (placed == false) {
+            const int amulet_room = randint(0,current_level->num_rooms()-1);
+            const map_room& ar = current_level->room(amulet_room);
+            placed = place_item(new amulet(), ar);
+        }
+    }
     for (int i=0; i < current_level->num_rooms(); i++) {
         const map_room& r = current_level->room(i);
         switch(randint(0,3)) {
@@ -408,7 +417,7 @@ void pickup_item()
         } else {
             current_level->cell_ref(player.pos).item = nullptr;
             player.inv.push_back(item);
-            notes::add("you pick up " + item->name());
+            notes::add("you pick up the " + item->name());
         }
     }
 }
@@ -481,7 +490,7 @@ int main(int argc, char *argv[])
                     case 'i': show_inventory("player inventory"); break;
                     case 'd': drop_item(); break;
                     case 'u': use_item(); break;
-                    case 'h': if (key.lctrl) { player.hp = player.max_hp; } break;  // CHEAT
+                    case 'h': if (key.lctrl) { player.hp = player.max_hp = 999; } break;  // CHEAT
                     case 'n': if (key.lctrl) { new_level(++dlev); } break;  // CHEAT
                 }
                 break;

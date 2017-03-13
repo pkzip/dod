@@ -2,6 +2,7 @@
 
 #include <string>
 #include <libtcod.hpp>
+#include "notes.h"
 using namespace std;
 
 typedef enum
@@ -9,9 +10,9 @@ typedef enum
     GOLD,
     ARMOR,  // ASCII 8
     WEAPON, // ASCII 24
-    SCROLL, // ASCII 13
-    POTION,
     AMULET  // ASCII 12
+//    SCROLL, // ASCII 13
+//    POTION,
 } item_category;
 
 class item_base
@@ -40,4 +41,17 @@ public:
     int count() const { return quantity; }
 private:
     int quantity;
+};
+
+class amulet : public item_base
+{
+public:
+    amulet() {}
+    ~amulet() {}
+    item_category category() const { return AMULET; }
+    int map_char() const { return 12; }
+    TCODColor map_col() const { return TCODColor::purple; }
+    string name() const { return "amulet of yendor"; }
+    void use() { notes::add("nothing happens"); }
+    bool try_drop() { notes::add("you don't want to drop that"); return false; }
 };
