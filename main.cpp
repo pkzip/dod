@@ -7,6 +7,7 @@
 #include "common.h"
 #include "item_base.h"
 #include "notes.h"
+#include "weapon.h"
 
 level_map *current_level = nullptr;
 TCODConsole *io;
@@ -146,29 +147,24 @@ bool confirm_quit()
     return (key.vk == TCODK_CHAR && key.c == 'y');
 }
 
-int show_inventory(const string& prompt, function<bool (item_base*)> filter)
+int show_inventory(const string& prompt)
 {
     io->clear();
     io->setDefaultForeground(TCODColor::white);
     io->setAlignment(TCOD_LEFT);
     io->print(0,0,prompt.c_str());
 
-    int i=0;
     int ln=0;
-    while (i < player.inv.size()) {
-        item_base *item = player.inv[i];
-        if (filter(item)) {
-            bool worn = false;
-            if (item == player.worn_armor) worn = true;
-            string worn_str = "";
-            if (worn) worn_str = "[wearing]";
-            io->print(0,ln+2,"%c) %s %s",'a'+ln,item->name().c_str(),worn_str.c_str());
-            ln++;
-        }
-        i++;
+    while (ln < player.inv.size()) {
+        item_base *item = player.inv[ln];
+        string status;
+        if (item == player.worn_armor) status = "[wearing]";
+        if (item == player.wielding) status = "[wielding]";
+        io->print(0,ln+2,"%c) %s %s",'a'+ln,item->name().c_str(),status.c_str());
+        ln++;
     }
     if (ln == 0) {
-        notes::add("nothing suitable");
+        notes::add("nothing to show");
         return -1;
     }
     TCOD_key_t key;
@@ -266,7 +262,9 @@ void try_attack(creature *c)
     const int target_ac = c->get_ac();
     const bool hit = attack(target_ac, 0);
     if (hit) {
-        const int d = compute_damage("1d4",0);
+        dice damage_roll("1d2");
+        if (player.wielding != nullptr) damage_roll = player.wielding->get_damage();
+        const int d = compute_damage(damage_roll,0);
         c->take_damage(d);
         if (c->is_dead()) {
             notes::add("you defeat the " + c->def->name);
@@ -339,7 +337,7 @@ void add_treasure()
 {
     for (int i=0; i < current_level->num_rooms(); i++) {
         const map_room& r = current_level->room(i);
-        switch(randint(0,2)) {
+        switch(randint(0,3)) {
             case 0: // nothing
                 break;
             case 1: // gold coins
@@ -347,6 +345,9 @@ void add_treasure()
                 break;
             case 2: // armor
                 place_item(make_armor_for_level(dlev), r);
+                break;
+            case 3: // weapon
+                place_item(make_weapon_for_level(dlev), r);
                 break;
         }
     }
@@ -370,11 +371,25 @@ void new_level(const int level_num)
 
 void use_item()
 {
-    const int sel = show_inventory("select item to use or to stop using",
-        [](item_base *item) { return true; } );
+    const int sel = show_inventory("select item to use or to stop using");
     if (sel < 0) return;
     item_base *item = player.inv[sel];
     item->use();
+}
+
+void drop_item()
+{
+    if (current_level->cell(player.pos).item != nullptr) {
+        notes::add("this spot is already occupied");
+        return;
+    }    
+    const int sel = show_inventory("select item to drop");
+    if (sel < 0) return;
+    item_base *item = player.inv[sel];
+    if (item->try_drop()) {
+        player.inv.erase(player.inv.begin() + sel);
+        current_level->cell_ref(player.pos).item = item;
+    }    
 }
 
 void pickup_item()
@@ -393,7 +408,7 @@ void pickup_item()
         } else {
             current_level->cell_ref(player.pos).item = nullptr;
             player.inv.push_back(item);
-            notes::add("you find " + item->name());
+            notes::add("you pick up " + item->name());
         }
     }
 }
@@ -457,8 +472,14 @@ int main(int argc, char *argv[])
             case TCODK_RIGHT : try_move(player.pos.right()); break;
             case TCODK_CHAR : {
                 switch(key.c) {
+                    case '2': try_move(player.pos.up()); break;
+                    case '4': try_move(player.pos.left()); break;
+                    case '6': try_move(player.pos.right()); break;
+                    case '8': try_move(player.pos.down()); break; 
+                    case '5':
                     case '.': turn++; break;
-                    case 'i': show_inventory("player inventory", [](item_base *item) { return true; } ); break;
+                    case 'i': show_inventory("player inventory"); break;
+                    case 'd': drop_item(); break;
                     case 'u': use_item(); break;
                     case 'h': if (key.lctrl) { player.hp = player.max_hp; } break;  // CHEAT
                     case 'n': if (key.lctrl) { new_level(++dlev); } break;  // CHEAT

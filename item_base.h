@@ -8,6 +8,7 @@ typedef enum
 {
     GOLD,
     ARMOR,  // ASCII 8
+    WEAPON, // ASCII 24
     SCROLL, // ASCII 13
     POTION,
     AMULET  // ASCII 12
@@ -22,6 +23,7 @@ public:
     virtual TCODColor map_col() const = 0;
     virtual string name() const = 0;
     virtual void use() = 0;
+    virtual bool try_drop() = 0;
 };
 
 class gold_coins : public item_base
@@ -32,8 +34,9 @@ public:
     item_category category() const { return GOLD; }
     int map_char() const { return '*'; }
     TCODColor map_col() const { return TCODColor::yellow; }
-    string name() const { return "gold coins"; }
+    string name() const { return "gold coins"; } // not called
     void use() {}  // not called
+    bool try_drop() { return true; } // not called
     int count() const { return quantity; }
 private:
     int quantity;

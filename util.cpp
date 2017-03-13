@@ -153,3 +153,28 @@ string bonus_to_str(const int i)
     ss << i;
     return ss.str();
 }
+
+int standard_bonus_roll()
+{
+    const int roll = dice("3d6").roll();
+    int bonus = 0;
+    switch(roll) {
+        case 3: bonus = -3; break;
+        case 4:
+        case 5: bonus = -2; break;
+        case 6:
+        case 7: bonus = -1; break;
+        case 8:
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13: bonus = 0; break;
+        case 14:
+        case 15: bonus = 1; break;
+        case 16:
+        case 17: bonus = 2; break;
+        case 18: bonus = 3; break;
+    }
+    return bonus;
+}

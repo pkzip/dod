@@ -23,6 +23,7 @@ public:
     TCODColor map_col() const { return TCODColor::silver; }
     string name() const;
     void use();
+    bool try_drop();
     bool identified() const { return id; }
     bool cursed() const { return bonus < 0; }
 private:

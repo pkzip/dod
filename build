@@ -1,1 +1,1 @@
-g++ -std=c++11 -ltcod -ltcodxx -L. -L../rl17 -I../libtcod/include -lncurses common.cpp main.cpp levelmap.cpp util.cpp creature.cpp notes.cpp player_character.cpp armor.cpp -o rogue
+g++ -std=c++11 -ltcod -ltcodxx -L. -L../rl17 -I../libtcod/include -lncurses common.cpp main.cpp levelmap.cpp util.cpp creature.cpp notes.cpp player_character.cpp armor.cpp weapon.cpp -o rogue

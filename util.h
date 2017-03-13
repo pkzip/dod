@@ -42,3 +42,5 @@ bool attack(const int target_ac, const int attack_bonus);
 int compute_damage(const dice& d, const int damage_penalty);
 string int_to_str(const int i);
 string bonus_to_str(const int i);
+int standard_bonus_roll();
+

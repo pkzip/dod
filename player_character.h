@@ -7,6 +7,7 @@ using namespace std;
 
 class item_base;
 class armor;
+class weapon;
 
 class player_character
 {
@@ -26,6 +27,7 @@ public:
     int ac;
     vector<item_base*> inv;
     armor *worn_armor;
+    weapon *wielding;
 private:
     int regen;
 };

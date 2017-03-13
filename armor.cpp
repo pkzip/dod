@@ -20,13 +20,13 @@ void armor::use()
 {
     if (player.worn_armor != nullptr) {
         if (player.worn_armor->cursed()) {
-            notes::add("unable to remove cursed armor");
+            notes::add("unable to remove cursed " + player.worn_armor->name());
             return;
         }
     }
     if (player.worn_armor == this) {
         player.worn_armor = nullptr;
-        notes::add("armor removed");
+        notes::add("removed " + name());
         player.ac = DEFAULT_AC;
         return;
     }
@@ -34,6 +34,19 @@ void armor::use()
     player.ac = ac - bonus;
     id = true;
     notes::add("now wearing: " + name());
+}
+
+bool armor::try_drop()
+{
+    if (player.worn_armor == this) {
+        if (cursed()) {
+            notes::add("unable to remove cursed armor");
+            return false;
+        }
+        player.worn_armor = nullptr;
+        player.ac = DEFAULT_AC;
+    }
+    return true;
 }
 
 armor *make_armor_for_level(const int level)
@@ -46,25 +59,6 @@ armor *make_armor_for_level(const int level)
     }
     int sel = candidates[randint(0,candidates.size()-1)];
     const armor_def& def = armor_defs[sel];
-    const int roll = dice("3d6").roll();
-    int bonus = 0;
-    switch(roll) {
-        case 3: bonus = -3; break;
-        case 4:
-        case 5: bonus = -2; break;
-        case 6:
-        case 7: bonus = -1; break;
-        case 8:
-        case 9:
-        case 10:
-        case 11:
-        case 12:
-        case 13: bonus = 0; break;
-        case 14:
-        case 15: bonus = 1; break;
-        case 16:
-        case 17: bonus = 2; break;
-        case 18: bonus = 3; break;
-    }
+    const int bonus = standard_bonus_roll();
     return new armor(def.name, def.ac, bonus);
 }

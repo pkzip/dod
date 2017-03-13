@@ -13,6 +13,7 @@ player_character::player_character() :
     clev(1),
     ac(DEFAULT_AC),
     worn_armor(nullptr),
+    wielding(nullptr),
     regen(0)
 {
 }
