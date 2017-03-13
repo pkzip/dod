@@ -11,6 +11,7 @@ const int MAP_W = 80;
 const int MAP_H = 23;
 const int SCREEN_W = 80;
 const int SCREEN_H = 25;
+const int DEFAULT_AC = 10;
 
 extern player_character player;
 extern vector<creature*> creatures;

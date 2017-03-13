@@ -11,13 +11,10 @@ player_character::player_character() :
     gold(0),
     xp(0),
     clev(1),
+    ac(DEFAULT_AC),
+    worn_armor(nullptr),
     regen(0)
 {
-}
-
-int player_character::ac() const
-{
-    return 10;
 }
 
 void player_character::process_turn()

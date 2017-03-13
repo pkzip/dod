@@ -1,14 +1,17 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "util.h"
 using namespace std;
+
+class item_base;
+class armor;
 
 class player_character
 {
 public:
     player_character();
-    int ac() const;
     void process_turn();
     void grant_xp(const int add);
     string name;
@@ -20,6 +23,9 @@ public:
     int gold;
     int xp;
     int clev;
+    int ac;
+    vector<item_base*> inv;
+    armor *worn_armor;
 private:
     int regen;
 };

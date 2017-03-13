@@ -7,8 +7,10 @@ using namespace std;
 typedef enum
 {
     GOLD,
-    SCROLL,
-    POTION
+    ARMOR,  // ASCII 8
+    SCROLL, // ASCII 13
+    POTION,
+    AMULET  // ASCII 12
 } item_category;
 
 class item_base
@@ -18,6 +20,8 @@ public:
     virtual item_category category() const = 0;
     virtual int map_char() const = 0;
     virtual TCODColor map_col() const = 0;
+    virtual string name() const = 0;
+    virtual void use() = 0;
 };
 
 class gold_coins : public item_base
@@ -28,6 +32,8 @@ public:
     item_category category() const { return GOLD; }
     int map_char() const { return '*'; }
     TCODColor map_col() const { return TCODColor::yellow; }
+    string name() const { return "gold coins"; }
+    void use() {}  // not called
     int count() const { return quantity; }
 private:
     int quantity;

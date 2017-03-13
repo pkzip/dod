@@ -3,6 +3,7 @@
 #include <time.h>
 #include <sstream>
 #include <libtcod.hpp>
+#include "armor.h"
 #include "common.h"
 #include "item_base.h"
 #include "notes.h"
@@ -145,6 +146,46 @@ bool confirm_quit()
     return (key.vk == TCODK_CHAR && key.c == 'y');
 }
 
+int show_inventory(const string& prompt, function<bool (item_base*)> filter)
+{
+    io->clear();
+    io->setDefaultForeground(TCODColor::white);
+    io->setAlignment(TCOD_LEFT);
+    io->print(0,0,prompt.c_str());
+
+    int i=0;
+    int ln=0;
+    while (i < player.inv.size()) {
+        item_base *item = player.inv[i];
+        if (filter(item)) {
+            bool worn = false;
+            if (item == player.worn_armor) worn = true;
+            string worn_str = "";
+            if (worn) worn_str = "[wearing]";
+            io->print(0,ln+2,"%c) %s %s",'a'+ln,item->name().c_str(),worn_str.c_str());
+            ln++;
+        }
+        i++;
+    }
+    if (ln == 0) {
+        notes::add("nothing suitable");
+        return -1;
+    }
+    TCOD_key_t key;
+    while (!io->isWindowClosed()) {
+        io->flush();
+        TCODSystem::waitForEvent(TCOD_EVENT_KEY_PRESS,&key,NULL,true);
+        if (key.vk == TCODK_CHAR) {
+            if (key.c >= 'a' && key.c < 'a'+ln) {
+                return key.c - 'a';
+            }
+        } else if (key.vk == TCODK_ESCAPE || key.vk == TCODK_SPACE) {
+            return -1;
+        }
+    }
+    return -1;
+}
+
 void render_map()
 {
     do {
@@ -182,7 +223,7 @@ void render_map()
         io->print(11,SCREEN_H-1,string("Hits:" + int_to_str(player.hp) + "(" + int_to_str(player.max_hp) + ")").c_str());
         io->print(25,SCREEN_H-1,string("Str:" + int_to_str(player.strength) + "(" + int_to_str(player.max_strength) + ")").c_str());
         io->print(39,SCREEN_H-1,string("Gold:" + int_to_str(player.gold)).c_str());
-        io->print(51,SCREEN_H-1,string("Armor:" + int_to_str(player.ac())).c_str());
+        io->print(51,SCREEN_H-1,string("Armor:" + int_to_str(player.ac)).c_str());
         io->print(61,SCREEN_H-1,string("Exp:" + int_to_str(player.clev) + "/" + int_to_str(player.xp)).c_str());
         if (!notes::empty()) {
             const string msg = notes::next();
@@ -207,7 +248,7 @@ void render_map()
 
 void attack_player(creature *c)
 {
-    const bool hit = attack(player.ac(), 0);
+    const bool hit = attack(player.ac, 0);
     if (hit) {
         const int d = compute_damage(c->def->damage,0);
         player.hp -= d;
@@ -278,18 +319,35 @@ void update_visibility()
 
 }
 
+void place_item(item_base *item, const map_room& r)
+{
+    coords c = current_level->make_coords();
+    int tries = 0;
+    do {
+        c = current_level->room_random(r);
+        if (tries++ > 10) {  // failed to place
+            delete item;
+            return;
+        }
+    } while (current_level->cell(c).is_exit() ||
+             current_level->get_entry_point() == c ||
+             current_level->cell(c).item != nullptr);
+    current_level->cell_ref(c).item = item;
+}
+
 void add_treasure()
 {
     for (int i=0; i < current_level->num_rooms(); i++) {
         const map_room& r = current_level->room(i);
-        if (randint(0,1) == 0) {
-            item_base *item = new gold_coins(randint(1,dlev*5));
-            coords c = current_level->make_coords();
-            do {
-                c = current_level->room_random(r);
-            } while (current_level->cell(c).is_exit() ||
-                     current_level->cell(c).item != nullptr);
-            current_level->cell_ref(c).item = item;
+        switch(randint(0,2)) {
+            case 0: // nothing
+                break;
+            case 1: // gold coins
+                place_item(new gold_coins(randint(1,dlev*5)), r);
+                break;
+            case 2: // armor
+                place_item(make_armor_for_level(dlev), r);
+                break;
         }
     }
 }
@@ -310,16 +368,33 @@ void new_level(const int level_num)
     update_visibility();
 }
 
+void use_item()
+{
+    const int sel = show_inventory("select item to use or to stop using",
+        [](item_base *item) { return true; } );
+    if (sel < 0) return;
+    item_base *item = player.inv[sel];
+    item->use();
+}
+
 void pickup_item()
 {
     item_base *item = current_level->cell(player.pos).item;
     if (item == nullptr) return;
-    current_level->cell_ref(player.pos).item = nullptr;
     if (item->category() == GOLD) {
+        current_level->cell_ref(player.pos).item = nullptr;
         gold_coins *coins = static_cast<gold_coins*>(item);
         notes::add("you find " + int_to_str(coins->count()) + " gold coins");
         player.gold += coins->count();
         delete coins;
+    } else {
+        if (player.inv.size() >= 20) {
+            notes::add("pack is full");
+        } else {
+            current_level->cell_ref(player.pos).item = nullptr;
+            player.inv.push_back(item);
+            notes::add("you find " + item->name());
+        }
     }
 }
 
@@ -383,6 +458,8 @@ int main(int argc, char *argv[])
             case TCODK_CHAR : {
                 switch(key.c) {
                     case '.': turn++; break;
+                    case 'i': show_inventory("player inventory", [](item_base *item) { return true; } ); break;
+                    case 'u': use_item(); break;
                     case 'h': if (key.lctrl) { player.hp = player.max_hp; } break;  // CHEAT
                     case 'n': if (key.lctrl) { new_level(++dlev); } break;  // CHEAT
                 }

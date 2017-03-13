@@ -145,3 +145,11 @@ string int_to_str(const int i)
     ss << i;
     return ss.str();
 }
+
+string bonus_to_str(const int i)
+{
+    stringstream ss;
+    if (i >= 0) ss << "+";
+    ss << i;
+    return ss.str();
+}
