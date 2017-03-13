@@ -14,6 +14,7 @@ player_character::player_character() :
     ac(DEFAULT_AC),
     worn_armor(nullptr),
     wielding(nullptr),
+    ascending(false),
     regen(0)
 {
 }

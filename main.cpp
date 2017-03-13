@@ -13,6 +13,7 @@ level_map *current_level = nullptr;
 TCODConsole *io;
 int turn;
 int dlev;
+bool exit_game;
 
 void wait_continue()
 {
@@ -122,6 +123,13 @@ void player_setup()
     wait_continue();
 }
 
+void game_stats()
+{
+    io->print(SCREEN_W/2,16,string("Final Gold: " + int_to_str(player.gold)).c_str());
+    io->print(SCREEN_W/2,18,string("Final Experience: " + int_to_str(player.xp)).c_str());
+    io->print(SCREEN_W/2,20,string("Turns Played: " + int_to_str(turn)).c_str());
+}
+
 void game_over()
 {
     io->clear();
@@ -130,10 +138,20 @@ void game_over()
     io->print(SCREEN_W/2,6,"GAME OVER");
     io->print(SCREEN_W/2,10,string("Here lies " + player.name + ", a level " + int_to_str(player.clev) + " adventurer").c_str());
     io->print(SCREEN_W/2,12,string("Killed by " + cause_of_death + " on level " + int_to_str(dlev) + " of the Dungeons of Doom").c_str());
-    io->print(SCREEN_W/2,16,string("Final Gold: " + int_to_str(player.gold)).c_str());
-    io->print(SCREEN_W/2,18,string("Final Experience: " + int_to_str(player.xp)).c_str());
-    io->print(SCREEN_W/2,20,string("Turns Played: " + int_to_str(turn)).c_str());
+    game_stats();
     wait_continue();
+}
+
+void end_game()
+{
+    io->clear();
+    io->setDefaultForeground(TCODColor::white);
+    io->setAlignment(TCOD_CENTER);
+    io->print(SCREEN_W/2,6,"CONGRATULATIONS!!!!");
+    io->print(SCREEN_W/2,10,string(player.name + " returns to the surface with the Amulet of Yendor").c_str());
+    game_stats();
+    wait_continue();
+    exit_game = true;
 }
 
 bool confirm_quit()
@@ -336,7 +354,7 @@ bool place_item(item_base *item, const map_room& r)
 
 void add_treasure()
 {
-    if (dlev == AMULET_LEVEL) {
+    if (dlev >= AMULET_LEVEL) {
         bool placed = false;
         while (placed == false) {
             const int amulet_room = randint(0,current_level->num_rooms()-1);
@@ -418,6 +436,7 @@ void pickup_item()
             current_level->cell_ref(player.pos).item = nullptr;
             player.inv.push_back(item);
             notes::add("you pick up the " + item->name());
+            item->pickup();
         }
     }
 }
@@ -427,8 +446,15 @@ void try_move(const coords& target)
     if (player.pos == target) return; // moving off edge of map
     if (!current_level->cell(target).is_walkable()) return;
     if (current_level->cell(target).is_exit()) {
-        new_level(dlev+1);
-        notes::add("you descend to level " + int_to_str(dlev));
+        const int next_lev = dlev + (player.ascending ? -1 : 1);
+        if (next_lev == 0) {
+            end_game();
+            return;
+        }
+        new_level(next_lev);
+        string dir = "descend";
+        if (player.ascending) dir = "ascend";
+        notes::add("you " + dir + " to level " + int_to_str(dlev));
         return;
     }
     for (auto i = creatures.begin(); i != creatures.end(); ++i) {
@@ -464,7 +490,7 @@ int main(int argc, char *argv[])
     player_setup();
     new_level(1);
     turn = 0;
-    bool exit_game = false;
+    exit_game = false;
 
     while (!io->isWindowClosed() && !exit_game && player.hp > 0) {
         io->clear();
@@ -491,7 +517,7 @@ int main(int argc, char *argv[])
                     case 'd': drop_item(); break;
                     case 'u': use_item(); break;
                     case 'h': if (key.lctrl) { player.hp = player.max_hp = 999; } break;  // CHEAT
-                    case 'n': if (key.lctrl) { new_level(++dlev); } break;  // CHEAT
+                    case 'n': if (key.lctrl) { new_level(player.ascending?--dlev:++dlev); } break;  // CHEAT
                 }
                 break;
             }

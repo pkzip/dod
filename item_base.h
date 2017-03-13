@@ -2,6 +2,7 @@
 
 #include <string>
 #include <libtcod.hpp>
+#include "common.h"
 #include "notes.h"
 using namespace std;
 
@@ -25,6 +26,7 @@ public:
     virtual string name() const = 0;
     virtual void use() = 0;
     virtual bool try_drop() = 0;
+    virtual void pickup() {}
 };
 
 class gold_coins : public item_base
@@ -54,4 +56,5 @@ public:
     string name() const { return "amulet of yendor"; }
     void use() { notes::add("nothing happens"); }
     bool try_drop() { notes::add("you don't want to drop that"); return false; }
+    void pickup() { notes::add("you feel as if you know your way back"); player.ascending = true; }
 };

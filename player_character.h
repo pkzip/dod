@@ -28,6 +28,7 @@ public:
     vector<item_base*> inv;
     armor *worn_armor;
     weapon *wielding;
+    bool ascending;
 private:
     int regen;
 };
