@@ -8,6 +8,10 @@ A 7-day remake of the classic game, using C++ and libtcod.
 
 Locate the Amulet of Yendor deep in the Dungeons of Doom, and return to the surface.
 
+Binary Downloads:
+
+- http://madsorcerer.com/dod
+
 Keys:
 
 -  Move: arrow keys or 2/4/6/8
